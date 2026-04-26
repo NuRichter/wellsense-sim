@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wellsense · Pipeline Architecture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <link rel="stylesheet" href="styles/main.css" />
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <div id="navbar"></div>
+  <div id="statusBar"></div>
+  <main class="p-4 max-w-[1100px] mx-auto">
+    <div class="mb-4">
+      <h1 class="text-xl font-bold">Pipeline Architecture · Live View</h1>
+      <p class="text-sm" style="color:var(--color-text-dim)">
+        5-Layer stack visualisasi · stage indicator menyala mengikuti tick aktif.
+      </p>
+    </div>
+    <div id="pipelineDiagram"></div>
+  </main>
+</body>
+</html>

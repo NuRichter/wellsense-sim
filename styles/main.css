@@ -1,0 +1,121 @@
+/* Wellsense IOC — Global Styles */
+:root {
+  --color-critical    : #DC2626;
+  --color-warning     : #D97706;
+  --color-normal      : #16A34A;
+  --color-l1          : #BA7517;
+  --color-l2          : #BA7517;
+  --color-l3a-if      : #9333EA;
+  --color-l3a-lstm    : #7B72E8;
+  --color-l3b-km      : #E8770A;
+  --color-l4          : #1D9E75;
+  --color-zona1       : #60A5FA;
+  --color-zona2       : #34D399;
+  --color-zona3       : #FB923C;
+  --color-zona4       : #A78BFA;
+  --color-optimal     : #16A34A;
+  --color-degraded    : #D97706;
+  --color-critical-r  : #DC2626;
+  --color-bg          : #0F172A;
+  --color-surface     : #1E293B;
+  --color-border      : #334155;
+  --color-text        : #F1F5F9;
+  --color-text-dim    : #94A3B8;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+@keyframes pulse-stage {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes flow-arrow {
+  0% { transform: translateX(-4px); opacity: 0.4; }
+  50% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(4px); opacity: 0.4; }
+}
+
+@keyframes critical-blink {
+  0%, 100% { background-color: rgba(220, 38, 38, 0.15); }
+  50% { background-color: rgba(220, 38, 38, 0.35); }
+}
+
+.stage-active { animation: pulse-stage 1s infinite; }
+.stage-done   { opacity: 1; }
+.stage-idle   { opacity: 0.35; }
+
+.flow-arrow.active { animation: flow-arrow 1.2s ease-in-out infinite; }
+
+.critical-pulse { animation: critical-blink 1.5s infinite; }
+
+.surface { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.5rem; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 9999px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.badge-critical { background: rgba(220,38,38,0.18); color: #FCA5A5; }
+.badge-warning  { background: rgba(217,119,6,0.18); color: #FCD34D; }
+.badge-normal   { background: rgba(22,163,74,0.18); color: #86EFAC; }
+.badge-outlier  { background: rgba(147,51,234,0.18); color: #D8B4FE; }
+
+.zona-1 { border-left: 3px solid var(--color-zona1); }
+.zona-2 { border-left: 3px solid var(--color-zona2); }
+.zona-3 { border-left: 3px solid var(--color-zona3); }
+.zona-4 { border-left: 3px solid var(--color-zona4); }
+
+.sensor-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.sensor-card:hover { border-color: #64748B; transform: translateY(-1px); }
+.sensor-card.selected { border-color: #A78BFA; box-shadow: 0 0 0 2px rgba(167,139,250,0.25); }
+
+.stage-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 9999px;
+  font-size: 11px; font-weight: 600;
+  border: 1px solid var(--color-border);
+  background: rgba(15,23,42,0.6);
+}
+
+.scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+
+.hidden { display: none !important; }
+
+table.audit-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.audit-tbl th, table.audit-tbl td {
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--color-border);
+}
+table.audit-tbl th { color: var(--color-text-dim); font-weight: 600; background: rgba(15,23,42,0.5); }
+
+.tooltip {
+  position: relative;
+}
+.tooltip::after {
+  content: attr(data-tip);
+  position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
+  background: #0B1120; border: 1px solid var(--color-border);
+  padding: 4px 8px; font-size: 11px; white-space: nowrap;
+  border-radius: 4px; opacity: 0; pointer-events: none;
+  transition: opacity 0.12s;
+}
+.tooltip:hover::after { opacity: 1; }
