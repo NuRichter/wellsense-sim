@@ -2,6 +2,7 @@
 import { tickets } from '../../store/ticketStore.js';
 import { on, state } from '../../store/simulationStore.js';
 import { performAction } from '../../engine/L4_hitlStateMachine.js';
+import { generateRTTicketPDF, openPDFInModal } from '../../engine/pdfGenerator.js';
 
 const SEV_COLOR = {
   CRITICAL:   'var(--color-critical)',
@@ -23,7 +24,7 @@ function actionsForRoleTier(tier) {
   return [];
 }
 
-export function mount(el) {
+export function mount(el, scope) {
   function render() {
     if (!tickets.length) {
       el.innerHTML = `
@@ -45,12 +46,13 @@ export function mount(el) {
             <div class="surface p-4" style="border-left:4px solid ${sevC}">
               <div class="flex items-start justify-between mb-2">
                 <div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 flex-wrap">
                     <span class="font-mono text-sm font-bold">${t.ticket_id}</span>
                     <span class="badge ${STATUS_BADGE[t.status] || 'badge-warning'}">${t.status}</span>
                     <span class="badge" style="background:${sevC};color:white">${t.severity}</span>
                     <span class="text-xs" style="color:var(--color-text-dim)">${t.source} Track</span>
                     <span class="text-xs" style="color:var(--color-text-dim)">Tier ${t.current_tier}</span>
+                    ${t.source === 'RT' ? `<button data-pdf="${t.ticket_id}" class="text-[10px] px-2 py-0.5 rounded border" style="border-color:var(--color-border);color:var(--color-text-dim)">🖨 PDF</button>` : ''}
                   </div>
                   <div class="text-xs mt-1" style="color:var(--color-text-dim)">
                     ${t.timestamp_sim} · ${t.primary_zone} · Cycle #${t.cycle_number}
@@ -122,8 +124,18 @@ export function mount(el) {
         if (!res.ok) alert(res.error);
       });
     });
+    el.querySelectorAll('button[data-pdf]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tid = btn.dataset.pdf;
+        const t = tickets.find(x => x.ticket_id === tid);
+        if (!t) return;
+        const pdf = generateRTTicketPDF(t);
+        openPDFInModal(pdf, `Tiket Intervensi · ${t.ticket_id} · ${t.severity}`);
+      });
+    });
   }
-  on('ticketsChanged', render);
-  on('roleChanged', render);
+  const sub = scope ? scope.on : on;
+  sub('ticketsChanged', render);
+  sub('roleChanged', render);
   render();
 }

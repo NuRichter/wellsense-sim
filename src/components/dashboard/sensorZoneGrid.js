@@ -15,7 +15,7 @@ function fmt(v, unit) {
   return v.toFixed(3) + ' ' + unit;
 }
 
-export function mount(el) {
+export function mount(el, scope) {
   function render() {
     const zones = { 1: [], 2: [], 3: [], 4: [] };
     Object.entries(SENSOR_META).forEach(([id, meta]) => zones[meta.zona].push(id));
@@ -59,6 +59,7 @@ export function mount(el) {
       });
     });
   }
-  on('stateChange', render);
+  const sub = scope ? scope.on : on;
+  sub('stateChange', render);
   render();
 }

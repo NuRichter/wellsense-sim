@@ -5,12 +5,16 @@ import { tickets } from '../../store/ticketStore.js';
 let scatterChart;
 
 const REGIME_COLOR = {
-  OPTIMAL:  '#16A34A',
-  DEGRADED: '#D97706',
-  CRITICAL: '#DC2626',
+  STABLE:    '#16A34A',
+  MODERATE:  '#D97706',
+  HIGH_RISK: '#DC2626',
+  // legacy fallback
+  OPTIMAL:   '#16A34A',
+  DEGRADED:  '#D97706',
+  CRITICAL:  '#DC2626',
 };
 
-export function mount(el) {
+export function mount(el, scope) {
   el.innerHTML = `
     <div class="grid grid-cols-3 gap-4 mb-4">
       <div class="surface p-3">
@@ -53,9 +57,9 @@ export function mount(el) {
   scatterChart = new Chart(ctx, {
     type: 'scatter',
     data: { datasets: [
-      { label: 'OPTIMAL',  data: [], backgroundColor: '#16A34A', pointRadius: 4 },
-      { label: 'DEGRADED', data: [], backgroundColor: '#D97706', pointRadius: 4 },
-      { label: 'CRITICAL', data: [], backgroundColor: '#DC2626', pointRadius: 4 },
+      { label: 'STABLE',    data: [], backgroundColor: '#16A34A', pointRadius: 4 },
+      { label: 'MODERATE',  data: [], backgroundColor: '#D97706', pointRadius: 4 },
+      { label: 'HIGH_RISK', data: [], backgroundColor: '#DC2626', pointRadius: 4 },
       { label: 'Centroids', data: [], backgroundColor: 'transparent', borderColor: '#fff', pointStyle: 'crossRot', pointRadius: 10, borderWidth: 2 },
     ]},
     options: {
@@ -78,6 +82,7 @@ export function mount(el) {
       },
     },
   });
+  if (scope) scope.track(scatterChart);
 
   function refresh() {
     const k = state.kmeansResult;
@@ -104,7 +109,7 @@ export function mount(el) {
         const x = entry.rep10[whpIdx];
         const y = entry.rep10[glIdx];
         const lab = k.pointLabels[i];
-        const idx = lab === 'OPTIMAL' ? 0 : lab === 'DEGRADED' ? 1 : 2;
+        const idx = lab === 'STABLE' ? 0 : lab === 'MODERATE' ? 1 : 2;
         scatterChart.data.datasets[idx].data.push({
           x, y, tick: entry.tick, pLpo: entry.P_LPO,
           backgroundColor: isRecent ? REGIME_COLOR[lab] : REGIME_COLOR[lab] + '4D',
@@ -144,8 +149,9 @@ export function mount(el) {
     }
   }
 
-  on('regimeUpdate', refresh);
-  on('stateChange', refresh);
-  on('ticketsChanged', refresh);
+  const sub = scope ? scope.on : on;
+  sub('regimeUpdate', refresh);
+  sub('stateChange', refresh);
+  sub('ticketsChanged', refresh);
   refresh();
 }

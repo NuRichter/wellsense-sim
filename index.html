@@ -3,31 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Wellsense IOC · Dashboard</title>
+  <title>Wellsense IOC · Mahakam Block</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="lib/chart.umd.min.js"></script>
+  <script src="lib/papaparse.min.js"></script>
+  <script src="lib/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="styles/main.css" />
   <script type="module" src="src/main.js"></script>
 </head>
 <body>
+  <!-- Persistent shell (mounted once, never unmounted) -->
   <div id="navbar"></div>
   <div id="statusBar"></div>
 
+  <!-- View outlet -->
   <main class="p-4 max-w-[1600px] mx-auto">
-    <div id="alertBanner" class="hidden"></div>
-    <div id="pipelineStage"></div>
-    <div id="sensorStreamChart"></div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div id="sensorZoneGrid"></div>
-      <div id="sensorDetailPanel"></div>
-    </div>
-
-    <div class="mt-4">
-      <div id="scenarioPanel"></div>
-    </div>
+    <div id="viewTitle" class="mb-4"></div>
+    <div id="viewOutlet"></div>
   </main>
 </body>
 </html>

@@ -27,7 +27,7 @@ function arrowHTML(active) {
   return `<span class="flow-arrow ${active ? 'active' : ''}" style="color:var(--color-text-dim);font-size:14px">→</span>`;
 }
 
-export function mount(el) {
+export function mount(el, scope) {
   function render() {
     const ss = state.stageStatus;
     const rt = STAGES_RT.map((s, i) => {
@@ -53,8 +53,9 @@ export function mount(el) {
       </div>
     `;
   }
-  on('stageChange', render);
-  on('stateChange', render);
-  on('regimeUpdate', render);
+  const sub = scope ? scope.on : on;
+  sub('stageChange', render);
+  sub('stateChange', render);
+  sub('regimeUpdate', render);
   render();
 }

@@ -10,7 +10,7 @@ const Z_REPS = {
   4: 'GOR',
 };
 
-export function mount(el) {
+export function mount(el, scope) {
   el.innerHTML = `
     <div class="surface p-3 mb-3">
       <div class="flex items-center justify-between mb-2">
@@ -47,6 +47,8 @@ export function mount(el) {
     },
   });
 
+  if (scope) scope.track(chart);
+
   function refresh() {
     const len = state.sensorHistory.WHP.length;
     chart.data.labels = Array.from({ length: len }, (_, i) => i);
@@ -55,6 +57,7 @@ export function mount(el) {
     });
     chart.update('none');
   }
-  on('stateChange', refresh);
+  const sub = scope ? scope.on : on;
+  sub('stateChange', refresh);
   refresh();
 }

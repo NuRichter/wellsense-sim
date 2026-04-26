@@ -69,8 +69,8 @@ export const ZONA_META = {
 export function emit(event, detail = {}) {
   _bus.dispatchEvent(new CustomEvent(event, { detail }));
 }
-export function on(event, handler) {
-  _bus.addEventListener(event, handler);
+export function on(event, handler, options = undefined) {
+  _bus.addEventListener(event, handler, options);
   return () => _bus.removeEventListener(event, handler);
 }
 

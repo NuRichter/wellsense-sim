@@ -2,7 +2,7 @@
 import { listAll, exportCSV, clearAll } from '../../store/auditStore.js';
 import { on } from '../../store/simulationStore.js';
 
-export function mount(el) {
+export function mount(el, scope) {
   function render() {
     const all = listAll();
     el.innerHTML = `
@@ -56,6 +56,7 @@ export function mount(el) {
       if (confirm('Clear all audit entries?')) clearAll();
     });
   }
-  on('auditChanged', render);
+  const sub = scope ? scope.on : on;
+  sub('auditChanged', render);
   render();
 }

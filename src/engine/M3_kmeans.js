@@ -121,16 +121,16 @@ export function runKMeans(regimeBuffer) {
     // Use unweighted GL_Rate centroid value (divide back by 2)
     clusterGLMean.push(centroids[c][GL_RATE_IDX] / 2);
   }
-  const labels = new Array(K).fill('OPTIMAL');
+  const labels = new Array(K).fill('STABLE');
   let critical = clusterLpoMean.indexOf(Math.max(...clusterLpoMean));
-  labels[critical] = 'CRITICAL';
-  // among non-critical, find lowest GL → DEGRADED
+  labels[critical] = 'HIGH_RISK';
+  // among non-critical, find lowest GL → MODERATE
   let degradedIdx = -1, lowestGL = Infinity;
   for (let c = 0; c < K; c++) {
     if (c === critical) continue;
     if (clusterGLMean[c] < lowestGL) { lowestGL = clusterGLMean[c]; degradedIdx = c; }
   }
-  if (degradedIdx >= 0) labels[degradedIdx] = 'DEGRADED';
+  if (degradedIdx >= 0) labels[degradedIdx] = 'MODERATE';
 
   const sil = silhouette(points, assignments, K);
 
@@ -178,8 +178,8 @@ function majorityLabel(slice, labels) {
 
 export function detectMigration(today, yesterday) {
   if (!yesterday || !today || today === yesterday) return null;
-  if (yesterday === 'OPTIMAL' && today === 'DEGRADED')   return { kind: 'WARNING',    tier: 2, from: yesterday, to: today };
-  if (yesterday === 'OPTIMAL' && today === 'CRITICAL')   return { kind: 'CRITICAL',   tier: 3, from: yesterday, to: today };
-  if (yesterday === 'DEGRADED' && today === 'CRITICAL')  return { kind: 'ESCALATION', tier: 3, from: yesterday, to: today };
-  return null; // improvement = no ticket
+  if (yesterday === 'STABLE'   && today === 'MODERATE')   return { kind: 'WARNING',    tier: 2, from: yesterday, to: today, scenario: 'STABLE_TO_MODERATE' };
+  if (yesterday === 'STABLE'   && today === 'HIGH_RISK')  return { kind: 'CRITICAL',   tier: 3, from: yesterday, to: today, scenario: 'STABLE_TO_HIGH_RISK' };
+  if (yesterday === 'MODERATE' && today === 'HIGH_RISK')  return { kind: 'ESCALATION', tier: 3, from: yesterday, to: today, scenario: 'MODERATE_TO_HIGH_RISK' };
+  return null;
 }

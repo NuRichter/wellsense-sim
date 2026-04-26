@@ -7,7 +7,7 @@ let detailChart, gaugeChart, lpoChart;
 
 const ZONE_COLOR = id => ZONA_META[SENSOR_META[id].zona].color;
 
-export function mount(el) {
+export function mount(el, scope) {
   el.innerHTML = `
     <div class="surface p-3 mb-3">
       <div class="flex items-center justify-between mb-2">
@@ -106,6 +106,8 @@ export function mount(el) {
       elements: { point: { radius: 0 }, line: { borderWidth: 1.5 } },
     },
   });
+
+  if (scope) { scope.track(detailChart); scope.track(gaugeChart); scope.track(lpoChart); }
 
   function rebuildDetailChart() {
     const id = state.selectedSensor;

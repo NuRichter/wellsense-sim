@@ -7,9 +7,11 @@ import * as M1 from './M1_isolationForest.js';
 import * as M2 from './M2_lstmSimulator.js';
 import * as M3 from './M3_kmeans.js';
 import * as L4 from './L4_hitlStateMachine.js';
+import * as PDF from './pdfGenerator.js';
 import { state, emit, persistTickPtr, SENSOR_META } from '../store/simulationStore.js';
 import { tickToSimTime } from '../utils/timeFormatter.js';
 import { FEATURE_NAMES } from './L2_preprocessing.js';
+import { tickets } from '../store/ticketStore.js';
 
 const HISTORY_LEN = 60;
 let timer = null;
@@ -218,6 +220,11 @@ function runBDTrack() {
           sim_time: tickToSimTime(state.tick, state.activeDate),
         });
       }
+      // Daily recap PDF — fire at tick 138 (= 23:00) of each sim day
+      const tickOfDay = state.tick % 144;
+      if (tickOfDay === 138) {
+        scheduleDailyRecap(migration, result);
+      }
     } else {
       state.kmeansResult = result;
     }
@@ -225,6 +232,53 @@ function runBDTrack() {
     emit('regimeUpdate');
     emit('stateChange');
   }, 0);
+}
+
+function scheduleDailyRecap(migration, kmeansResult) {
+  setTimeout(() => {
+    try {
+      // Determine scenario
+      let scenario = 'NO_MIGRATION';
+      if (migration?.scenario) scenario = migration.scenario;
+
+      // Filter tickets created today
+      const dateStr = state.activeDate;
+      const todayStart = state.tick - (state.tick % 144);
+      const rtTicketsToday = tickets.filter(t =>
+        t.source === 'RT' && (t.timestamp_sim || '').startsWith(dateStr));
+      const bdTicketsToday = tickets.filter(t =>
+        t.source === 'BD' && (t.timestamp_sim || '').startsWith(dateStr));
+
+      // Build per-hour regime timeline (last 24 hourly snapshots = last 24 BD cycles)
+      // The regimeBuffer holds per-tick rep; BD K-Means assignments cover all entries.
+      // We need 24 representative regime labels for the day (one per hour).
+      // Approximate by sampling pointLabels at every 6th index from the day's slice.
+      const buf = state.regimeBuffer;
+      const startIdx = Math.max(0, buf.length - 144);
+      const dayLabels = [];
+      for (let h = 0; h < 24; h++) {
+        const tickInDay = h * 6;
+        const bufIdx = startIdx + tickInDay;
+        const lab = kmeansResult?.pointLabels?.[bufIdx] || 'STABLE';
+        dayLabels.push(lab);
+      }
+
+      const pdf = PDF.generateDailyRecapPDF({
+        scenario,
+        dateStr,
+        todayRegime: state.currentRegime,
+        yesterdayRegime: state.yesterdayRegime,
+        silhouette: state.silhouetteScore,
+        rtTicketsToday,
+        bdTicketsToday,
+        regimeTimelineDay: dayLabels,
+      });
+      PDF.openPDFInModal(pdf, `Recap Harian · ${dateStr} · ${scenario.replace(/_/g, ' ')}`);
+      emit('printJobIssued', { kind: 'BD_RECAP', scenario, dateStr });
+    } catch (e) {
+      console.warn('Daily recap PDF generation failed:', e);
+    }
+  }, 300);
 }
 
 // AUTO scenario schedule — fires at exact ticks

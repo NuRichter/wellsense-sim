@@ -1,7 +1,7 @@
 // components/pipeline/pipelineDiagram.js
 import { state, on } from '../../store/simulationStore.js';
 
-export function mount(el) {
+export function mount(el, scope) {
   function render() {
     const ss = state.stageStatus;
     const cls = (s) => s === 'active' ? 'stage-active' : s === 'done' ? 'stage-done' : 'stage-idle';
@@ -87,7 +87,8 @@ export function mount(el) {
       </div>
     `;
   }
-  on('stageChange', render);
-  on('stateChange', render);
+  const sub = scope ? scope.on : on;
+  sub('stageChange', render);
+  sub('stateChange', render);
   render();
 }

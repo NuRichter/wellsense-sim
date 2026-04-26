@@ -1,7 +1,8 @@
 // engine/L4_hitlStateMachine.js — Layer 4
 import * as ticketStore from '../store/ticketStore.js';
 import * as auditStore from '../store/auditStore.js';
-import { state } from '../store/simulationStore.js';
+import { state, emit } from '../store/simulationStore.js';
+import { generateRTTicketPDF, openPDFInModal } from './pdfGenerator.js';
 
 const ALPHA = 0.65;
 const HUMAN_JUDGMENT = { APPROVE: 1.0, REJECT: 0.0, ESCALATE: 0.5, OVERRIDE: 0.7 };
@@ -45,7 +46,23 @@ export function createRTTicket({ P_LPO, sensor_snapshot, top_contributors, prima
     action: 'CREATED', reason: `Auto-created: P(LPO)=${ticket.P_LPO}`,
     P_LPO: ticket.P_LPO, severity,
   });
+  // Print Job A — auto-cetak PDF tiket RT (warning/critical)
+  scheduleRTPrint(ticket);
   return ticket;
+}
+
+function scheduleRTPrint(ticket) {
+  // Defer to next tick so the dashboard can render the alert banner first
+  setTimeout(() => {
+    try {
+      const pdf = generateRTTicketPDF(ticket);
+      const title = `Tiket Intervensi · ${ticket.ticket_id} · ${ticket.severity}`;
+      openPDFInModal(pdf, title);
+      emit('printJobIssued', { kind: 'RT', ticket });
+    } catch (e) {
+      console.warn('PDF generation failed:', e);
+    }
+  }, 250);
 }
 
 export function createBDTicket({ migration, snapshot, sim_time }) {

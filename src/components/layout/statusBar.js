@@ -3,7 +3,7 @@ import { state, on } from '../../store/simulationStore.js';
 import { fmtUptime, tickToSimTime } from '../../utils/timeFormatter.js';
 import * as orchestrator from '../../engine/orchestrator.js';
 
-export function mount(el) {
+export function mount(el, scope) {
   el.innerHTML = `
     <div id="statusBar" class="flex flex-wrap items-center gap-x-6 gap-y-2 px-6 py-2 text-xs"
          style="background:#0B1120;border-bottom:1px solid var(--color-border)">
@@ -52,9 +52,10 @@ export function mount(el) {
     btnPlay.classList.toggle('hidden', state.isRunning);
     btnPause.classList.toggle('hidden', !state.isRunning);
   }
-  on('tickAdvanced', refresh);
-  on('runStateChange', refresh);
-  on('stateChange', refresh);
+  const sub = scope ? scope.on : on;
+  sub('tickAdvanced', refresh);
+  sub('runStateChange', refresh);
+  sub('stateChange', refresh);
 
   btnPlay.addEventListener('click', () => orchestrator.start());
   btnPause.addEventListener('click', () => orchestrator.pause());
