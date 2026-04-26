@@ -301,6 +301,163 @@ function buildReasoning(ticket) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// PRINT JOB A · BD VARIANT — CLUSTER MIGRATION TICKET (per-event)
+// Dipakai saat K-Means hourly mendeteksi pergeseran cluster harian.
+// Berbeda dari Daily Recap (Print Job B) yang merupakan rekap akhir hari.
+// ═══════════════════════════════════════════════════════════
+const REGIME_COLOR_MAP = {
+  STABLE:    [22, 163, 74],
+  MODERATE:  [217, 119, 6],
+  HIGH_RISK: [220, 38, 38],
+};
+
+export function generateBDTicketPDF(ticket) {
+  const pdf = newPDF();
+  const sev = ticket.severity;
+  const severityColor = sev === 'CRITICAL' ? COL.critical
+                      : sev === 'ESCALATION' ? [147, 51, 234]
+                      : COL.warning;
+  const tierLabel = ticket.current_tier === 1 ? 'Well Operator'
+                  : ticket.current_tier === 2 ? 'Well Engineer'
+                  : 'Production Engineer';
+
+  header(pdf, {
+    title: 'TIKET CLUSTER REVIEW · OPERATING REGIME MIGRATION',
+    subtitle: 'Print Job A (BD Variant) · Source: BD Track · K-Means k=3 hourly · Layer 4 HITL',
+    severityColor,
+    badgeText: `${sev} · TIER ${ticket.current_tier}`,
+  });
+
+  let y = 48;
+
+  // ─── ① Identitas + Migration Visualization ───
+  sectionTitle(pdf, 15, y, '① IDENTITAS TIKET MIGRASI REGIME');
+  y += 5;
+  const idRows = [
+    ['Ticket ID',        ticket.ticket_id],
+    ['Timestamp Sim',    ticket.timestamp_sim],
+    ['Timestamp Real',   new Date(ticket.timestamp_real).toLocaleString('id-ID')],
+    ['Source',           'BD-KMeans (hourly cluster shift)'],
+    ['Severity',         sev],
+    ['Cycle Number',     `${ticket.cycle_number} of 5`],
+    ['Primary Zone',     ticket.primary_zone || 'Multi-Zone (Operating Regime)'],
+    ['Routing Tier',     `Tier ${ticket.current_tier} · ${tierLabel}`],
+  ];
+  kvTable(pdf, 18, y, 105, idRows);
+
+  // Migration arrow box (right column)
+  const boxX = 130, boxY = y - 4;
+  setDraw(pdf, severityColor);
+  pdf.setLineWidth(0.6);
+  pdf.roundedRect(boxX, boxY, 65, 45, 2, 2);
+  setText(pdf, COL.dim);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8);
+  pdf.text('CLUSTER MIGRATION', boxX + 32.5, boxY + 6, { align: 'center' });
+  pdf.text('K-Means hourly assignment', boxX + 32.5, boxY + 10, { align: 'center' });
+
+  const fromColor = REGIME_COLOR_MAP[ticket.regime_from] || COL.dim;
+  const toColor = REGIME_COLOR_MAP[ticket.regime_to] || COL.dim;
+  // FROM
+  setText(pdf, fromColor);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(11);
+  pdf.text(ticket.regime_from || '—', boxX + 18, boxY + 22, { align: 'center' });
+  // Arrow
+  setText(pdf, COL.text);
+  pdf.setFontSize(14);
+  pdf.text('→', boxX + 32.5, boxY + 22, { align: 'center' });
+  // TO
+  setText(pdf, toColor);
+  pdf.setFontSize(11);
+  pdf.text(ticket.regime_to || '—', boxX + 47, boxY + 22, { align: 'center' });
+
+  // Severity label
+  setText(pdf, severityColor);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(9);
+  pdf.text(sev, boxX + 32.5, boxY + 32, { align: 'center' });
+  setText(pdf, COL.dim);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7);
+  const routingNote = sev === 'WARNING' ? 'Routing: Tier 2 review'
+                    : sev === 'CRITICAL' ? 'Skip 2-hop: Tier 3 langsung'
+                    : 'Escalation: Tier 3 approval';
+  pdf.text(routingNote, boxX + 32.5, boxY + 38, { align: 'center' });
+
+  y += 56;
+
+  // ─── ② Migration Context ───
+  sectionTitle(pdf, 15, y, '② KONTEKS MIGRASI · Mengapa Cluster Bergeser?');
+  y += 5;
+  setFill(pdf, COL.bg);
+  pdf.rect(15, y - 1, 180, 24, 'F');
+  setText(pdf, COL.text);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8);
+  const contextText = bdContextNarrative(ticket);
+  const wrapped = pdf.splitTextToSize(contextText, 174);
+  pdf.text(wrapped, 18, y + 4);
+  y += 28;
+
+  // ─── ③ Sensor Snapshot ───
+  sectionTitle(pdf, 15, y, '③ SENSOR SNAPSHOT · 10 Representative Values saat Migrasi');
+  y += 5;
+  const snap = ticket.sensor_snapshot || {};
+  const snapEntries = Object.entries(snap);
+  pdf.setFontSize(8);
+  pdf.setFont('helvetica', 'normal');
+  const colWidth = 88;
+  snapEntries.forEach((entry, i) => {
+    const [k, v] = entry;
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const cx = 18 + col * colWidth;
+    const cy = y + row * 4.5;
+    setText(pdf, COL.dim);
+    pdf.text(k, cx, cy);
+    setText(pdf, COL.text);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(typeof v === 'number' ? v.toFixed(2) : String(v), cx + 40, cy);
+    pdf.setFont('helvetica', 'normal');
+  });
+  y += Math.ceil(snapEntries.length / 2) * 4.5 + 4;
+
+  // ─── ④ Recommendation ───
+  sectionTitle(pdf, 15, y, '④ REKOMENDASI TINDAKAN');
+  y += 5;
+  setFill(pdf, COL.bg);
+  pdf.rect(15, y - 1, 180, 12, 'F');
+  setText(pdf, severityColor);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(9);
+  pdf.text('REKOMENDASI: ', 18, y + 5);
+  setText(pdf, COL.text);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(ticket.recommendation || '-', 50, y + 5);
+  y += 16;
+
+  // ─── ⑤ Signature ───
+  signatureBlock(pdf, 15, y, 180);
+  footer(pdf, ticket.ticket_id);
+  return pdf;
+}
+
+function bdContextNarrative(ticket) {
+  const f = ticket.regime_from, t = ticket.regime_to;
+  if (f === 'STABLE' && t === 'MODERATE') {
+    return `K-Means hourly mendeteksi pergeseran centroid dari cluster STABLE ke MODERATE pada ${ticket.timestamp_sim}. Indikasi awal degradasi profil operasi — biasanya bersumber dari penurunan efisiensi gas-lift, peningkatan variansi flow, atau kombinasi keduanya. Routing: Well Engineer (Tier 2) wajib meninjau penyebab utama dan mengajukan rencana korektif sebelum cycle berikutnya selesai.`;
+  }
+  if (f === 'STABLE' && t === 'HIGH_RISK') {
+    return `Terjadi DOUBLE-JUMP STABLE → HIGH_RISK. Pergeseran tajam dalam satu interval — biasanya kombinasi multi-zona anomaly yang akumulasi (mis. WHP drop + GL failure + BSW rising). Routing: skip 2-hop langsung ke Production Engineer (Tier 3). Field inspection wajib dijadwalkan ulang dalam 24 jam, pertimbangan shutdown sementara harus dievaluasi.`;
+  }
+  if (f === 'MODERATE' && t === 'HIGH_RISK') {
+    return `Profil bergeser dari MODERATE ke HIGH_RISK — progresi degradasi yang sebelumnya sudah ditandai. ESCALATION: corrective action di cycle sebelumnya kemungkinan tidak efektif, atau ada faktor eksogen baru. Production Engineer (Tier 3) wajib menyetujui rencana intervensi sebelum operasi dilanjutkan. Disarankan analisis lintas-cycle untuk akar penyebab.`;
+  }
+  return `Pergeseran cluster terdeteksi. Operator wajib meninjau snapshot sensor di section ③ untuk mengidentifikasi sumber anomali, lalu menjalankan rekomendasi tindakan di section ④.`;
+}
+
+// ═══════════════════════════════════════════════════════════
 // PRINT JOB B — DAILY RECAP (BD Track · 4 Skenario)
 // ═══════════════════════════════════════════════════════════
 export function generateDailyRecapPDF(opts) {

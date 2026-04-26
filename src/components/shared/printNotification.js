@@ -51,6 +51,14 @@ export function mount() {
         body: `${t.severity} · ${t.ticket_id} · P(LPO)=${t.P_LPO} · Modal preview terbuka untuk Well Operator.`,
         color: isCritical ? '#DC2626' : '#D97706',
       });
+    } else if (d.kind === 'BD') {
+      const t = d.ticket;
+      const colorMap = { CRITICAL: '#DC2626', ESCALATION: '#9333EA', WARNING: '#D97706' };
+      show({
+        title: 'Print Job A (BD) · Tiket Cluster Review',
+        body: `${t.severity} · ${t.regime_from} → ${t.regime_to} · ${t.ticket_id} · Modal preview terbuka.`,
+        color: colorMap[t.severity] || '#D97706',
+      });
     } else if (d.kind === 'BD_RECAP') {
       const sc = d.scenario.replace(/_/g, ' ');
       show({

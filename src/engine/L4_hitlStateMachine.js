@@ -2,7 +2,7 @@
 import * as ticketStore from '../store/ticketStore.js';
 import * as auditStore from '../store/auditStore.js';
 import { state, emit } from '../store/simulationStore.js';
-import { generateRTTicketPDF, openPDFInModal } from './pdfGenerator.js';
+import { generateRTTicketPDF, generateBDTicketPDF, openPDFInModal } from './pdfGenerator.js';
 
 const ALPHA = 0.65;
 const HUMAN_JUDGMENT = { APPROVE: 1.0, REJECT: 0.0, ESCALATE: 0.5, OVERRIDE: 0.7 };
@@ -91,7 +91,22 @@ export function createBDTicket({ migration, snapshot, sim_time }) {
     action: 'CREATED', reason: `Regime migration: ${migration.from} → ${migration.to}`,
     P_LPO: null, severity: sevMap[migration.kind],
   });
+  // Print Job A (BD variant) — auto-cetak PDF tiket cluster review
+  scheduleBDPrint(ticket);
   return ticket;
+}
+
+function scheduleBDPrint(ticket) {
+  setTimeout(() => {
+    try {
+      const pdf = generateBDTicketPDF(ticket);
+      const title = `Tiket Cluster Review · ${ticket.ticket_id} · ${ticket.regime_from} → ${ticket.regime_to}`;
+      openPDFInModal(pdf, title);
+      emit('printJobIssued', { kind: 'BD', ticket });
+    } catch (e) {
+      console.warn('BD PDF generation failed:', e);
+    }
+  }, 250);
 }
 
 export function performAction({ ticket_id, action, reason, role }) {

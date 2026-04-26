@@ -2,7 +2,7 @@
 import { tickets } from '../../store/ticketStore.js';
 import { on, state } from '../../store/simulationStore.js';
 import { performAction } from '../../engine/L4_hitlStateMachine.js';
-import { generateRTTicketPDF, openPDFInModal } from '../../engine/pdfGenerator.js';
+import { generateRTTicketPDF, generateBDTicketPDF, openPDFInModal } from '../../engine/pdfGenerator.js';
 
 const SEV_COLOR = {
   CRITICAL:   'var(--color-critical)',
@@ -53,6 +53,7 @@ export function mount(el, scope) {
                     <span class="text-xs" style="color:var(--color-text-dim)">${t.source} Track</span>
                     <span class="text-xs" style="color:var(--color-text-dim)">Tier ${t.current_tier}</span>
                     ${t.source === 'RT' ? `<button data-pdf="${t.ticket_id}" class="text-[10px] px-2 py-0.5 rounded border" style="border-color:var(--color-border);color:var(--color-text-dim)">🖨 PDF</button>` : ''}
+                    ${t.source === 'BD' ? `<button data-pdf-bd="${t.ticket_id}" class="text-[10px] px-2 py-0.5 rounded border" style="border-color:var(--color-border);color:var(--color-text-dim)">🖨 PDF</button>` : ''}
                   </div>
                   <div class="text-xs mt-1" style="color:var(--color-text-dim)">
                     ${t.timestamp_sim} · ${t.primary_zone} · Cycle #${t.cycle_number}
@@ -131,6 +132,15 @@ export function mount(el, scope) {
         if (!t) return;
         const pdf = generateRTTicketPDF(t);
         openPDFInModal(pdf, `Tiket Intervensi · ${t.ticket_id} · ${t.severity}`);
+      });
+    });
+    el.querySelectorAll('button[data-pdf-bd]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tid = btn.dataset.pdfBd;
+        const t = tickets.find(x => x.ticket_id === tid);
+        if (!t) return;
+        const pdf = generateBDTicketPDF(t);
+        openPDFInModal(pdf, `Tiket Cluster Review · ${t.ticket_id} · ${t.regime_from} → ${t.regime_to}`);
       });
     });
   }
